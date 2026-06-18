@@ -114,7 +114,7 @@ Return ONLY valid JSON in this exact format, no preamble, no markdown:
   }
 });
 
-app.get('*', (req, res) => {
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
