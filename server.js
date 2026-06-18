@@ -1,5 +1,5 @@
 const express = require('express');
-const nodemailer = require('nodemailer');
+const { google } = require('googleapis');
 const Anthropic = require('@anthropic-ai/sdk');
 const cors = require('cors');
 const path = require('path');
@@ -11,6 +11,36 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+async function appendToSheet(data) {
+  const credentials = JSON.parse(process.env.GOOGLE_SHEETS_CREDENTIALS);
+  const sheetId = process.env.GOOGLE_SHEETS_ID;
+  
+  const auth = new google.auth.GoogleAuth({
+    credentials,
+    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+  });
+  
+  const sheets = google.sheets({ version: 'v4', auth });
+  
+  const values = [
+    [
+      new Date().toISOString(),
+      data.name,
+      data.brand,
+      data.pull_quote,
+      data.full_testimonial,
+      JSON.stringify(data.answers),
+    ],
+  ];
+  
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: sheetId,
+    range: 'Sheet1!A:F',
+    valueInputOption: 'USER_ENTERED',
+    resource: { values },
+  });
+}
 
 app.post('/api/submit', async (req, res) => {
   const { name, brand, answers } = req.body;
@@ -55,56 +85,13 @@ Return ONLY valid JSON in this exact format, no preamble, no markdown:
       };
     }
 
-    const emailHtml = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><style>
-  body { font-family: -apple-system, sans-serif; max-width: 640px; margin: 0 auto; padding: 24px; color: #1a1a1a; }
-  h1 { font-size: 20px; font-weight: 500; margin-bottom: 4px; }
-  .meta { color: #666; font-size: 14px; margin-bottom: 32px; }
-  h2 { font-size: 15px; font-weight: 500; margin: 28px 0 8px; text-transform: uppercase; letter-spacing: 0.05em; color: #888; }
-  .pull-quote { background: #f5f0ff; border-left: 3px solid #7c3aed; padding: 16px 20px; border-radius: 0 8px 8px 0; font-size: 17px; font-style: italic; line-height: 1.6; margin: 8px 0 24px; }
-  .testimonial { background: #f9f9f9; border-radius: 8px; padding: 20px; font-size: 15px; line-height: 1.7; }
-  .qa-block { margin-bottom: 20px; }
-  .question { font-size: 13px; font-weight: 500; color: #888; margin-bottom: 4px; }
-  .answer { font-size: 15px; line-height: 1.6; }
-  .divider { border: none; border-top: 1px solid #eee; margin: 32px 0; }
-</style></head>
-<body>
-  <h1>New testimonial — ${name}, ${brand}</h1>
-  <p class="meta">Submitted via AFM testimonial link</p>
-
-  <h2>Suggested pull quote</h2>
-  <div class="pull-quote">"${aiResult.pull_quote}"</div>
-
-  <h2>Full testimonial (AI-crafted from their responses)</h2>
-  <div class="testimonial">"${aiResult.full_testimonial}"<br><br>— ${name}, Founder, ${brand}</div>
-
-  <hr class="divider">
-
-  <h2>Raw responses</h2>
-  ${answers.map((a, i) => `
-    <div class="qa-block">
-      <div class="question">Q${i + 1}: ${a.question}</div>
-      <div class="answer">${a.answer}</div>
-    </div>
-  `).join('')}
-</body>
-</html>`;
-
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD
-      }
-    });
-
-    await transporter.sendMail({
-      from: `"AFM Testimonials" <${process.env.GMAIL_USER}>`,
-      to: 'yvan@activatedfrequencymarketing.com',
-      subject: `New testimonial — ${name}, ${brand}`,
-      html: emailHtml
+    // Append to Google Sheet
+    await appendToSheet({
+      name,
+      brand,
+      pull_quote: aiResult.pull_quote,
+      full_testimonial: aiResult.full_testimonial,
+      answers
     });
 
     res.json({ success: true });
