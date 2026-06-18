@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Share your experience — AFM</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #fafafa;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    color: #1a1a1a;
+  }
+
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid #ebebeb;
+    padding: 48px 44px;
+    max-width: 560px;
+    width: 100%;
+  }
+
+  .logo {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #999;
+    margin-bottom: 40px;
+  }
+
+  .step-indicator {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 36px;
+  }
+
+  .step-dot {
+    height: 3px;
+    border-radius: 2px;
+    background: #e8e8e8;
+    flex: 1;
+    transition: background 0.3s ease;
+  }
+
+  .step-dot.active { background: #1a1a1a; }
+  .step-dot.done { background: #c8c8c8; }
+
+  .time-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f4f0ff;
+    color: #6d28d9;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 20px;
+    margin-bottom: 28px;
+  }
+
+  .time-badge svg { width: 14px; height: 14px; }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  h1 {
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 1.35;
+    margin-bottom: 12px;
+    color: #1a1a1a;
+  }
+
+  .subtitle {
+    font-size: 15px;
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 32px;
+  }
+
+  .question-label {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #aaa;
+    margin-bottom: 10px;
+  }
+
+  .question-text {
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: #1a1a1a;
+    margin-bottom: 24px;
+  }
+
+  .context-note {
+    font-size: 13px;
+    color: #999;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  input[type="text"], textarea {
+    width: 100%;
+    font-family: inherit;
+    font-size: 15px;
+    color: #1a1a1a;
+    background: #fafafa;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    outline: none;
+    transition: border-color 0.2s;
+    resize: none;
+    line-height: 1.6;
+  }
+
+  input[type="text"]:focus, textarea:focus {
+    border-color: #1a1a1a;
+    background: #fff;
+  }
+
+  textarea { min-height: 140px; }
+
+  .input-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .input-row input { margin-bottom: 0; }
+
+  .input-group { flex: 1; }
+  .input-group label { display: block; font-size: 12px; color: #999; margin-bottom: 6px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #1a1a1a;
+    color: #fff;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    padding: 14px 24px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    margin-top: 20px;
+  }
+
+  .btn:hover { background: #333; }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { background: #ccc; cursor: not-allowed; }
+
+  .btn-secondary {
+    background: transparent;
+    color: #999;
+    font-size: 13px;
+    padding: 0;
+    margin-top: 14px;
+    display: block;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .btn-secondary:hover { color: #1a1a1a; }
+
+  .arrow { font-size: 18px; }
+
+  .progress-text {
+    font-size: 13px;
+    color: #bbb;
+    margin-top: 24px;
+  }
+
+  .success-icon {
+    width: 48px;
+    height: 48px;
+    background: #f0fdf4;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+
+  .success-icon svg { width: 24px; height: 24px; color: #16a34a; }
+
+  .error-msg {
+    font-size: 13px;
+    color: #dc2626;
+    margin-top: 8px;
+    display: none;
+  }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 480px) {
+    .card { padding: 32px 24px; }
+    h1 { font-size: 20px; }
+    .question-text { font-size: 17px; }
+    .input-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">AFM</div>
+
+  <div class="step-indicator" id="stepIndicator" style="display:none;">
+    <div class="step-dot" id="dot0"></div>
+    <div class="step-dot" id="dot1"></div>
+    <div class="step-dot" id="dot2"></div>
+    <div class="step-dot" id="dot3"></div>
+    <div class="step-dot" id="dot4"></div>
+  </div>
+
+  <!-- Screen 0: Intro -->
+  <div class="screen active" id="screen-intro">
+    <div class="time-badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      </svg>
+      5–7 minutes
+    </div>
+    <h1>Share your experience working with AFM</h1>
+    <p class="subtitle">Five quick questions. Your words help other founders make one of the most important decisions in their business — finding a marketing partner they can actually trust.</p>
+    <p class="subtitle" style="margin-top: -16px;">There are no right or wrong answers. Just tell it like it was.</p>
+    <div class="input-row" style="margin-top: 32px;">
+      <div class="input-group">
+        <label>Your first name</label>
+        <input type="text" id="clientName" placeholder="Amy">
+      </div>
+      <div class="input-group">
+        <label>Your brand</label>
+        <input type="text" id="clientBrand" placeholder="Paume">
+      </div>
+    </div>
+    <div class="error-msg" id="introError">Please fill in both fields to continue.</div>
+    <button class="btn" onclick="startFlow()">Let's go <span class="arrow">→</span></button>
+  </div>
+
+  <!-- Screen 1–5: Questions -->
+  <div class="screen" id="screen-q">
+    <div class="question-label" id="qLabel">Question 1 of 5</div>
+    <div class="question-text" id="qText"></div>
+    <div class="context-note" id="qContext"></div>
+    <textarea id="qAnswer" placeholder="Type your answer here..."></textarea>
+    <div class="error-msg" id="qError">Please write something before continuing.</div>
+    <button class="btn" onclick="nextQuestion()">Continue <span class="arrow">→</span></button>
+    <button class="btn-secondary" onclick="prevQuestion()">← Back</button>
+    <div class="progress-text" id="progressText"></div>
+  </div>
+
+  <!-- Screen: Submitting -->
+  <div class="screen" id="screen-loading">
+    <h1 style="margin-bottom: 16px;">Sending your responses...</h1>
+    <p class="subtitle">This takes a few seconds.</p>
+  </div>
+
+  <!-- Screen: Success -->
+  <div class="screen" id="screen-success">
+    <div class="success-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <h1>Thank you, <span id="successName"></span>.</h1>
+    <p class="subtitle" style="margin-top: 12px;">Your responses are in. Yvan reviews every submission personally before using any quote — if he wants to adjust anything, he'll reach out first.</p>
+    <p class="subtitle">We genuinely appreciate you taking the time.</p>
+  </div>
+
+  <!-- Screen: Error -->
+  <div class="screen" id="screen-error">
+    <h1>Something went wrong.</h1>
+    <p class="subtitle" style="margin-top: 12px;">Your responses weren't sent. Please try again or email Yvan directly at yvan@activatedfrequencymarketing.com.</p>
+    <button class="btn" onclick="retrySubmit()">Try again</button>
+  </div>
+</div>
+
+<script>
+const questions = [
+  {
+    text: "Before working with Yvan, what was your biggest frustration with paid media or your previous agency?",
+    context: "Be as specific as you can — the more real, the better.",
+    placeholder: "e.g. We were burning through budget with no clear explanation of why things weren't working..."
+  },
+  {
+    text: "What made you decide to reach out to AFM specifically?",
+    context: "Was it a referral? Something you read? A feeling you got from a conversation?",
+    placeholder: "e.g. A founder I trust recommended Yvan, and I'd been burned enough times that I needed someone with a different track record..."
+  },
+  {
+    text: "What's the most meaningful result or change you've seen since working together?",
+    context: "This can be a number, a shift in how the business runs, or how you feel day-to-day. Specific is better than polished.",
+    placeholder: "e.g. We went from a 0.8x ROAS on Meta to consistently running at 3.2x over six months..."
+  },
+  {
+    text: "How would you describe working with Yvan to another founder who's on the fence?",
+    context: "Imagine a founder in your network just asked you: is AFM worth it?",
+    placeholder: "e.g. He treats your business like it's his own. I've never had to chase him for an update..."
+  },
+  {
+    text: "Anything else you want to add — about the process, the communication, or what surprised you?",
+    context: "Completely optional. Skip it if nothing else comes to mind.",
+    placeholder: "e.g. What surprised me most was how quickly he got up to speed on our brand..."
+  }
+];
+
+let currentQ = 0;
+let answers = [];
+let clientName = '';
+let clientBrand = '';
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+}
+
+function updateDots() {
+  for (let i = 0; i < 5; i++) {
+    const dot = document.getElementById('dot' + i);
+    if (i < currentQ) dot.className = 'step-dot done';
+    else if (i === currentQ) dot.className = 'step-dot active';
+    else dot.className = 'step-dot';
+  }
+}
+
+function startFlow() {
+  clientName = document.getElementById('clientName').value.trim();
+  clientBrand = document.getElementById('clientBrand').value.trim();
+  const err = document.getElementById('introError');
+
+  if (!clientName || !clientBrand) {
+    err.style.display = 'block';
+    return;
+  }
+
+  err.style.display = 'none';
+  answers = new Array(5).fill('');
+  currentQ = 0;
+  document.getElementById('stepIndicator').style.display = 'flex';
+  loadQuestion();
+  showScreen('q');
+}
+
+function loadQuestion() {
+  const q = questions[currentQ];
+  document.getElementById('qLabel').textContent = `Question ${currentQ + 1} of ${questions.length}`;
+  document.getElementById('qText').textContent = q.text;
+  document.getElementById('qContext').textContent = q.context;
+  document.getElementById('qAnswer').placeholder = q.placeholder;
+  document.getElementById('qAnswer').value = answers[currentQ] || '';
+  document.getElementById('qError').style.display = 'none';
+
+  const isLast = currentQ === questions.length - 1;
+  const btn = document.querySelector('#screen-q .btn');
+  btn.innerHTML = isLast
+    ? 'Submit <span class="arrow">→</span>'
+    : 'Continue <span class="arrow">→</span>';
+
+  const mins = Math.ceil((questions.length - currentQ) * 1.2);
+  document.getElementById('progressText').textContent = `About ${mins} minute${mins !== 1 ? 's' : ''} left`;
+
+  updateDots();
+  setTimeout(() => document.getElementById('qAnswer').focus(), 50);
+}
+
+function nextQuestion() {
+  const val = document.getElementById('qAnswer').value.trim();
+  const isOptional = currentQ === questions.length - 1;
+  const err = document.getElementById('qError');
+
+  if (!val && !isOptional) {
+    err.style.display = 'block';
+    return;
+  }
+
+  err.style.display = 'none';
+  answers[currentQ] = val;
+
+  if (currentQ < questions.length - 1) {
+    currentQ++;
+    loadQuestion();
+  } else {
+    submitForm();
+  }
+}
+
+function prevQuestion() {
+  answers[currentQ] = document.getElementById('qAnswer').value.trim();
+  if (currentQ > 0) {
+    currentQ--;
+    loadQuestion();
+  } else {
+    document.getElementById('stepIndicator').style.display = 'none';
+    showScreen('intro');
+  }
+}
+
+async function submitForm() {
+  showScreen('loading');
+
+  const payload = {
+    name: clientName,
+    brand: clientBrand,
+    answers: questions.map((q, i) => ({
+      question: q.text,
+      answer: answers[i] || '(skipped)'
+    }))
+  };
+
+  try {
+    const res = await fetch('/api/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) throw new Error('Server error');
+
+    document.getElementById('successName').textContent = clientName;
+    document.getElementById('stepIndicator').style.display = 'none';
+    showScreen('success');
+  } catch {
+    document.getElementById('stepIndicator').style.display = 'none';
+    showScreen('error');
+  }
+}
+
+function retrySubmit() {
+  document.getElementById('stepIndicator').style.display = 'flex';
+  showScreen('loading');
+  submitForm();
+}
+</script>
+</body>
+</html>
